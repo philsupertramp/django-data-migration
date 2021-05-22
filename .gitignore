@@ -1,0 +1,11 @@
+.idea/
+.pytest_cache/
+data_migration.egg-info/
+coverage_html_report/
+__pycache__/
+
+
+.coverage
+.pypirc
+
+*.pyc
