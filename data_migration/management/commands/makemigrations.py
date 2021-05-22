@@ -15,10 +15,11 @@ class Command(Migrate):
         super().add_arguments(parser)
 
     def handle(self, *app_labels, **options):
-        create_empty_data_migration = options['data_migration']
+        create_empty_data_migration = options.get('data_migration')
         if create_empty_data_migration:
             is_dry_run = options.get('dry_run')
-            return 'Generated files: ' + ', '.join([DataMigrationGenerator(app, set_header=options.get('include_header', True), empty=options.get('empty', False), dry_run=is_dry_run).file_name for app in app_labels])
+            labels = list(app_labels)
+            return 'Generated files: ' + ', '.join([DataMigrationGenerator(app, readable_name=options.get('name'), set_header=options.get('include_header', True), empty=options.get('empty', False), dry_run=is_dry_run).file_name for app in labels])
 
         else:
             return super().handle(*app_labels, **options)

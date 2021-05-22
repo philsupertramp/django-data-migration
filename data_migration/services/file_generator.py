@@ -17,8 +17,10 @@ class DataMigrationGenerator:
 
     def __init__(self, app_name, readable_name: Optional[str] = None, set_header: bool = True,
                  empty: bool = False, dry_run: bool = False) -> None:
-        root_dir = apps.get_app_config(app_name).path
         self.app_name = app_name
+        if isinstance(self.app_name, list):
+            self.app_name = self.app_name[0]
+        root_dir = apps.get_app_config(self.app_name).path
         self.file_dir = os.path.join(root_dir, 'data_migrations')
         self.set_header = set_header
         self.empty = empty

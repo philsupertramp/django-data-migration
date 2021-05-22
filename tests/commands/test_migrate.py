@@ -84,7 +84,7 @@ class MigrateCommandTestCase(TransactionTestCase):
         call_command('migrate', app_label='test_app')
 
         self.run_commit_hooks()
-        call_command('makemigrations', ['test_app'], data_migration=True)
+        call_command('makemigrations', 'test_app', data_migration=True)
 
         self.run_commit_hooks()
         call_command('migrate', app_label='test_app')
