@@ -28,7 +28,12 @@ migrations, without the need of an dedicated node in the migration tree.
 
 Install package:
 
+Planned:  
 `pip install django-data-migration`
+
+Reality:  
+1. Clone the repo
+1. run `pip install .` inside the project root
 
 Configure package in Django settings:
 
