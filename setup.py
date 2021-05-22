@@ -17,7 +17,7 @@ setup(
     keywords='django',
     license='MIT',
     install_requires=[
-        'django >= "3.0"'
+        'django >= "2.2"'
     ],
     long_description=read('README.md'),
     classifiers=[
@@ -26,6 +26,7 @@ setup(
         "Framework :: Django :: 3.0",
         "Framework :: Django :: 3.1",
         "Framework :: Django :: 3.2",
+        "Framework :: Django :: 2.2",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
