@@ -1,4 +1,6 @@
 # django-data-migration
+[![Test dev branch](https://github.com/philsupertramp/django-data-migration/actions/workflows/test-dev.yml/badge.svg?branch=dev)](https://github.com/philsupertramp/django-data-migration/actions/workflows/test-dev.yml)
+
 Developing and maintaining a django project
 over many years can start to become a constant fight against
 time consuming tasks including execution of a test suite,
