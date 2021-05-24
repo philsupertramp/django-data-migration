@@ -1,6 +1,8 @@
 import os
 from typing import Optional
-from unittest import TestCase
+from unittest import TestCase, mock
+from django.test import TransactionTestCase as DjangoTestCase
+from django.db import transaction
 import django
 
 
@@ -38,14 +40,32 @@ class FileTestCase(TestCase):
         return None
 
 
+class TransactionalTestCase(DjangoTestCase):
+    def run_commit_hooks(self):
+        """
+        Fake transaction commit to run delayed on_commit functions
+        """
+        for db_name in reversed(self._databases_names()):
+            with mock.patch('django.db.backends.base.base.BaseDatabaseWrapper.validate_no_atomic_block',
+                            lambda a: False):
+                transaction.get_connection(using=db_name).run_and_clear_commit_hooks()
+
+
+is_django_setup = False
+
+
 def setup_django():
+    global is_django_setup
     try:
         os.remove(DB_NAME)
     except FileNotFoundError:
         pass
+    if is_django_setup:
+        return
+
+    is_django_setup = True
     print('SETUP')
     from django.conf import settings
-    from django.core.management import call_command
 
     settings.configure(
         SECRET_KEY='xxx',
@@ -82,7 +102,18 @@ def setup_django():
         DEFAULT_AUTO_FIELD='django.db.models.BigAutoField',
     )
     django.setup()
+    migrate()
+
+
+def migrate():
+    from django.core.management import call_command
     call_command('django_migrate')
+
+    from django.db import connections
+
+    with connections['default'].cursor() as cursor:
+        cursor.execute("PRAGMA foreign_keys = OFF;")
+        cursor.fetchone()
 
 
 def teardown_django():

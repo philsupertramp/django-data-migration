@@ -31,5 +31,6 @@ class Command(Migrate):
             data_migrations = Graph.from_dir(app_label)
             data_migrations.apply(options.get('migration_name'))
 
-        return super().handle(*args, **options)
+        if not options['data_migration']:
+            return super().handle(*args, **options)
 

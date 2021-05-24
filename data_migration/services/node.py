@@ -1,8 +1,3 @@
-from django.apps.registry import Apps
-from django.db import models, connections, DatabaseError
-from django.utils import timezone
-
-
 class classproperty:
     """
     Decorator that converts a method with a single cls argument into a property
@@ -36,6 +31,9 @@ class Node:
         bypass missing appconfig
         """
         if cls._node_model is None:
+            from django.apps.registry import Apps
+            from django.db import models
+
             class NodeClass(models.Model):
                 app_name = models.CharField(max_length=255)
                 name = models.CharField(max_length=255, unique=True)
@@ -65,6 +63,7 @@ class Node:
             raise AlreadyAppliedError(self)
 
         self.ensure_table()
+        from django.utils import timezone
         self.created_at = timezone.now()
 
         obj = self.Node(name=self.name, app_name=self.app_name, created_at=self.created_at)
@@ -72,11 +71,26 @@ class Node:
         self.pk = obj.pk
         self.created_at = obj.created_at
 
-    @classproperty
-    def qs(self) -> models.Manager:
+    @property
+    def qs(self) -> 'django.db.models.Manager':
         return self.Node.objects
 
+    def exists(self):
+        self.ensure_table()
+        return self.qs.filter(app_name=self.app_name, name=self.name).exists()
+
+    @classmethod
+    def flush(cls):
+        return cls.get_qs().delete()
+
+    @classmethod
+    def get_qs(cls):
+        node = cls('', '')
+        node.ensure_table()
+        return node.qs.all()
+
     def has_table(self):
+        from django.db import connections
         with connections['default'].cursor() as cursor:
             tables = connections['default'].introspection.table_names(cursor)
         return self.Node._meta.db_table in tables
@@ -84,9 +98,10 @@ class Node:
     def ensure_table(self):
         if self.has_table():
             return
+        from django.db import connections, DatabaseError
         # Make the table
         try:
             with connections['default'].schema_editor() as editor:
                 editor.create_model(self.Node)
-        except DatabaseError:
-            raise Exception('Table not "data_migrations" creatable')
+        except DatabaseError as ex:
+            raise Exception(f'Table "data_migrations" not creatable ({str(ex)}')

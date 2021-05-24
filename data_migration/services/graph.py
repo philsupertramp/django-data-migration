@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from django.apps import apps
 from django.db import connections
+from django.db.migrations.exceptions import NodeNotFoundError
 from django.db.migrations.executor import MigrationExecutor
 from django.db.migrations.recorder import MigrationRecorder
 
@@ -25,10 +26,10 @@ class GraphNode:
     @staticmethod
     def get_or_prepare_node(app_name, name):
         node_obj = Node(app_name=app_name, name=name)
-        qs = Node.Node.objects.filter(app_name=app_name, name=name)
-        if qs.exists():
-            node_obj.pk = qs.first().pk
-            node_obj.created_at = qs.first().created_at
+        if node_obj.exists():
+            node = node_obj.qs.filter(app_name=app_name, name=name).first()
+            node_obj.pk = node.pk
+            node_obj.created_at = node.created_at
         return node_obj
 
     def apply(self):
@@ -42,6 +43,7 @@ class GraphNode:
         executor = MigrationExecutor(connection)
         pre_migrate_state = executor._create_project_state(with_applied_migrations=True)
         current_state_apps = pre_migrate_state.apps
+        migration_graph_in_place = True
 
         if self.migration_dependencies:
             recorder = MigrationRecorder(connections['default'])
@@ -54,15 +56,28 @@ class GraphNode:
                     unapplied_dependencies.append(plan)
 
             if unapplied_dependencies:
-                plan = executor.migration_plan(unapplied_dependencies)
-                post_migrate_state = executor.migrate(unapplied_dependencies, plan=plan, state=pre_migrate_state.clone())
-                # post_migrate signals have access to all models. Ensure that all models
-                # are reloaded in case any are delayed.
-                post_migrate_state.clear_delayed_apps_cache()
-                current_state_apps = post_migrate_state.apps
+                try:
+                    plan = executor.migration_plan(unapplied_dependencies)
+                    post_migrate_state = executor.migrate(unapplied_dependencies, plan=plan, state=pre_migrate_state.clone())
+                except NodeNotFoundError as ex:
+                    for dep in unapplied_dependencies:
+                        if not recorder.migration_qs.filter(app=dep[0], name__icontains=dep[1]).exists():
+                            raise ex
+                else:
+                    # post_migrate signals have access to all models. Ensure that all models
+                    # are reloaded in case any are delayed.
+                    post_migrate_state.clear_delayed_apps_cache()
+                    current_state_apps = post_migrate_state.apps
 
-        for routine in self.routines:
-            routine(current_state_apps)
+            migration_graph_in_place = (recorder
+                                        .migration_qs
+                                        .filter(app=self.node.app_name)
+                                        .order_by('-pk').first() in self.migration_dependencies)
+
+        if migration_graph_in_place:
+            with connections['default'].schema_editor(atomic=True) as schema_editor:
+                for routine in self.routines:
+                    routine(apps=current_state_apps, schema_editor=schema_editor)
         self.node.apply()
 
     def revert(self):

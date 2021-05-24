@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from data_migration.services.node import Node
 from data_migration.services.graph import Graph, GraphNode
+from tests.utils import TransactionalTestCase
 
 old_value = 0
 new_value = 10
@@ -14,15 +15,15 @@ some_value = old_value
 this_dir = os.path.dirname(__file__)
 
 
-def set_some_value(apps) -> None:
+def set_some_value(apps, schema_editor) -> None:
     global some_value, new_value
     some_value += new_value
 
 
-class GraphTestCase(TestCase):
+class GraphTestCase(TransactionalTestCase):
     def setUp(self):
         self.reset_global_state()
-        Node.qs.all().delete()
+        Node.flush()
 
     @staticmethod
     def reset_global_state():
@@ -53,20 +54,20 @@ class GraphTestCase(TestCase):
         g.push_back(GraphNode('test', '0002_auto', ['0001_init'], [], []))
         g.push_back(GraphNode('test', '0003_auto', ['0002_auto'], [], []))
         g.apply()
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 3)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 3)
         g.apply('zero')
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 0)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 0)
         g.apply('0001_init')
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 1)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 1)
         g.apply('0001_init')
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 1)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 1)
         g.apply('0002_auto')
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 2)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 2)
         g.apply()
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 3)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 3)
         g.apply('zero')
         g.apply('0002_auto')
-        self.assertEqual(Node.qs.filter(app_name='test').count(), 2)
+        self.assertEqual(Node.get_qs().filter(app_name='test').count(), 2)
 
     def test_wrong_base(self):
         g = Graph('test')
@@ -115,7 +116,7 @@ class GraphTestCase(TestCase):
         g.apply(fail_silently=True)
 
 
-class GraphNodeTestCase(TestCase):
+class GraphNodeTestCase(TransactionalTestCase):
     def test_revert_fails_silently(self):
         node = GraphNode('test', '0001_init', [], [], [])
 
