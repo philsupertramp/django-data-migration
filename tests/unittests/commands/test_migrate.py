@@ -5,7 +5,7 @@ from data_migration.services.node import Node
 from django.core.management import call_command, CommandError
 from django.db import transaction
 from django.test import TransactionTestCase
-from tests.test_app.helper import ResetDirectoryContext
+from tests.unittests.test_app.helper import ResetDirectoryContext
 
 this_dir = os.path.dirname(__file__)
 
@@ -55,10 +55,11 @@ class MigrateCommandTestCase(TransactionTestCase):
         global some_value, new_value, old_value
 
         migrate_command.return_value = 'Ok.'
-        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.commands.in'), path=os.path.join(this_dir, 'in'))
+        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.unittests.commands.in'), path=os.path.join(this_dir,
+                                                                                                                       'in'))
         self.assertEqual(some_value, old_value)
 
-        call_command('migrate', app_label='tests.commands.in')
+        call_command('migrate', app_label='tests.unittests.commands.in')
 
         migrate_command.assert_called_once()
         self.assertEqual(some_value, new_value)
@@ -68,7 +69,7 @@ class MigrateCommandTestCase(TransactionTestCase):
             call_command('migrate', app_label='foobar123123')
 
     @mock.patch('django.db.migrations.loader.MigrationLoader.migrations_module',
-                return_value=('tests.test_app.migrations', '__first__'))
+                return_value=('tests.unittests.test_app.migrations', '__first__'))
     def test_migrate_with_leaf_migration(self, migration_module_mock):
         global some_value, new_value, old_value
         context = ResetDirectoryContext()

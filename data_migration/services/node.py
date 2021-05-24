@@ -19,7 +19,6 @@ class classproperty:
         return self
 
 
-
 class AlreadyAppliedError(Exception):
     def __init__(self, node: 'Node.Node'):
         super().__init__(f'Node {node} already applied. Do not reapply them!')

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 Extended management commands:
 - `makemigrations`
 - `migrate`
+- `squashmigrations`
 
 ### `makemigrations`
 ```python

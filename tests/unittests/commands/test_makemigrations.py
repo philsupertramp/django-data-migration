@@ -2,7 +2,7 @@ import os
 from unittest import mock
 
 from django.core.management import call_command
-from tests.test_app.helper import ResetDirectoryContext
+from tests.unittests.test_app.helper import ResetDirectoryContext
 from tests.utils import FileTestCase
 
 this_dir = os.path.dirname(__file__)

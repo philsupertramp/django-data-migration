@@ -84,8 +84,8 @@ class GraphTestCase(TestCase):
                 return_value=('django.contrib.contenttypes.migrations', '__first__'))
     @mock.patch('django.apps.apps.get_app_config')
     def test_from_dir(self, get_app_config_mock, migrations_module_mock):
-        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.services'), path=this_dir)
-        g = Graph.from_dir('tests.services')
+        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.unittests.services'), path=this_dir)
+        g = Graph.from_dir('tests.unittests.services')
         g.apply()
 
         self.assertEqual(some_value, new_value)
