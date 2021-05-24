@@ -1,6 +1,11 @@
 import os
 from typing import Optional
 from unittest import TestCase
+import django
+
+
+this_dir = os.path.dirname(__file__)
+DB_NAME = os.path.join(this_dir, 'db.sqlite3')
 
 
 class FileTestCase(TestCase):
@@ -31,3 +36,57 @@ class FileTestCase(TestCase):
                     content = file.read()
                 return content
         return None
+
+
+def setup_django():
+    try:
+        os.remove(DB_NAME)
+    except FileNotFoundError:
+        pass
+    print('SETUP')
+    from django.conf import settings
+    from django.core.management import call_command
+
+    settings.configure(
+        SECRET_KEY='xxx',
+        DATABASES={'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': DB_NAME,
+        }},
+        INSTALLED_APPS=[
+            'django.contrib.admin',
+            'django.contrib.auth',
+            'django.contrib.contenttypes',
+            'django.contrib.sessions',
+            'django.contrib.messages',
+            'django.contrib.staticfiles',
+            'data_migration',
+            'tests.unittests.test_app.apps.TestAppConfig'
+        ],
+        TEMPLATES=[
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': [os.path.join(this_dir, 'templates')]
+                ,
+                'APP_DIRS': True,
+                'OPTIONS': {
+                    'context_processors': [
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.request',
+                        'django.contrib.auth.context_processors.auth',
+                        'django.contrib.messages.context_processors.messages',
+                    ],
+                },
+            },
+        ],
+        DEFAULT_AUTO_FIELD='django.db.models.BigAutoField',
+    )
+    django.setup()
+    call_command('django_migrate')
+
+
+def teardown_django():
+    try:
+        os.remove(DB_NAME)
+    except FileNotFoundError:
+        pass

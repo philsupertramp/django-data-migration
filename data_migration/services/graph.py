@@ -196,6 +196,9 @@ class Graph:
             if file == '__init__.py':
                 continue
             file = file.split('.')[0]
-            node = import_module(f'{app_conf.module.__name__}.data_migrations.{file}').Node
+            try:
+                node = import_module(f'{app_conf.module.__name__}.data_migrations.{file}').Node
+            except AttributeError:
+                continue
             obj.push_back(GraphNode.from_struct(app_name, node))
         return obj
