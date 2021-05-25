@@ -2,7 +2,6 @@ import os.path
 from unittest import mock
 
 from data_migration.services.node import Node
-from data_migration.services.file_generator import Routine, DataMigrationGenerator
 from django.core.management import call_command, CommandError
 from tests.unittests.test_app.helper import ResetDirectoryContext
 from tests.utils import TransactionalTestCase, teardown_django, migrate
@@ -79,7 +78,6 @@ class MigrateCommandTestCase(TransactionalTestCase):
 
             self.run_commit_hooks()
 
-            call_command('sqlflush')
             call_command('makemigrations', ['test_app'])
 
             self.run_commit_hooks()

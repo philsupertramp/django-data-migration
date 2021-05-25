@@ -107,9 +107,8 @@ def setup_django():
 
 def migrate():
     from django.core.management import call_command
-    call_command('django_migrate')
-
     from django.db import connections
+    call_command('django_migrate')
 
     with connections['default'].cursor() as cursor:
         cursor.execute("PRAGMA foreign_keys = OFF;")

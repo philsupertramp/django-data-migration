@@ -59,6 +59,7 @@ class GraphNode:
                 try:
                     plan = executor.migration_plan(unapplied_dependencies)
                     post_migrate_state = executor.migrate(unapplied_dependencies, plan=plan, state=pre_migrate_state.clone())
+                    migration_graph_in_place = True
                 except NodeNotFoundError as ex:
                     for dep in unapplied_dependencies:
                         if not recorder.migration_qs.filter(app=dep[0], name__icontains=dep[1]).exists():
@@ -69,10 +70,11 @@ class GraphNode:
                     post_migrate_state.clear_delayed_apps_cache()
                     current_state_apps = post_migrate_state.apps
 
-            migration_graph_in_place = (recorder
-                                        .migration_qs
-                                        .filter(app=self.node.app_name)
-                                        .order_by('-pk').first() in self.migration_dependencies)
+            if not migration_graph_in_place:
+                migration_graph_in_place = (recorder
+                                            .migration_qs
+                                            .filter(app=self.node.app_name)
+                                            .order_by('-pk').first() in self.migration_dependencies)
 
         if migration_graph_in_place:
             with connections['default'].schema_editor(atomic=True) as schema_editor:
@@ -193,12 +195,11 @@ class Graph:
             latest_node = latest_node.next
 
         # revert until given point
-        while latest_node and latest_node != node:
+        while latest_node:
             latest_node.revert()
+            if not complete and latest_node == node:
+                break
             latest_node = latest_node.previous
-
-        # last but not least revert the target
-        latest_node.revert()
 
     @staticmethod
     def from_dir(app_name: str) -> 'Graph':
