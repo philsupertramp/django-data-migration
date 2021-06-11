@@ -58,11 +58,11 @@ class LogTestCase(TestCase):
     def test_write(self):
         input_string = 'Hello'
         self.log.write(input_string)
-        self.assertEqual(self.log.log, input_string)
+        self.assertEqual(self.log.log, input_string + '\n')
 
     def test_flush(self):
         input_string = 'Hello'
         self.log.write(input_string)
         self.log.flush()
-        self.assertEqual(self.log.stdout.getvalue(), input_string)
-        self.assertTrue(self.output.getvalue(), input_string)
+        self.assertEqual(self.log.stdout.getvalue(), input_string + '\n')
+        self.assertTrue(self.output.getvalue(), input_string + '\n')

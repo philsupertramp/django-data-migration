@@ -21,7 +21,7 @@ class Log:
         self.log = ''
 
     def write(self, message):
-        self.log += message
+        self.log += f'{message}\n'
 
     def flush(self):
         self.stdout.write(self.log)
@@ -46,12 +46,17 @@ class MigrationFile:
 
 
 class MigrationManager:
-    def __init__(self, app_name: str, starting_point: str, end_point: str):
+    def __init__(self, app_name: str, starting_point: str, end_point: str, dry_run: bool = False):
         self.app_name: str = app_name
         self.start: str = starting_point
         self.end: str = end_point
         self.requires_action: bool = False
         self.migration_files_to_touch: List[MigrationFile] = []
+        self.file_name = None
+        self.new_file_name = None
+        self.dry_run = dry_run
+
+    def load(self):
         self.file_name = self.gen_file_name()
         self.new_file_name = self.gen_new_file_name()
 
@@ -94,9 +99,24 @@ class MigrationManager:
                 char_count += len(line)
 
     def run(self):
+        self.load()
+
+        if self.dry_run:
+            log.write(f'Squashing {self.app_name}: "{self.start}"–"{self.end}"')
+            return
+
         call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input', stdout=log)
 
     def post_processing(self):
+        """
+        post processing of squashed migration files,
+        Drops part of django's squashmigration auto generated
+        comments/commands that makes migration files unusable.
+        """
+        if self.dry_run:
+            return
+
+        self.load()
         self._parse_generated_file()
         if self.requires_action:
 
@@ -134,10 +154,13 @@ class MigrationManager:
             os.remove(self.file_name)
 
     def process_data_migrations(self):
+        """
+        Generated data_migrations based on processed files.
+        """
         for elem in self.migration_files_to_touch:
             module_name = elem.replacement_string.split(".")[-2]
             module = '.'.join(elem.replacement_string.split('.')[:-1])
-            DataMigrationGenerator(
+            generator = DataMigrationGenerator(
                 self.app_name, module_name,
                 routines=[
                     Routine(
@@ -147,18 +170,22 @@ class MigrationManager:
                         file_path=elem.file_name,
                     )
                 ],
-                migration_dependencies=[module.replace('.migrations', '')]
+                migration_dependencies=[module.replace('.migrations', '')],
+                dry_run=self.dry_run,
             )
+            if self.dry_run:
+                log.write(f'Would generate "{generator.file_name}", containing {len(generator.routines)} routines.')
 
 
 class MigrationSquash:
-    def __init__(self, _loa: List[str]):
+    def __init__(self, _loa: List[str], dry_run: bool = False):
         self.executor: MigrationExecutor = MigrationExecutor(connection)
         self.plan: MigrationPlan = []
         self.graph: MigrationGraph = {}
         self.get_migration_graph()
         self.parse_plan()
         self.list_of_apps = _loa
+        self.dry_run = dry_run
 
     @property
     def log(self):
@@ -194,10 +221,9 @@ class MigrationSquash:
                 from_id = self.graph[street][0].name
                 to_id = self.graph[street][-1].name
                 try:
-                    mig = MigrationManager(app_name, from_id, to_id)
+                    mig = MigrationManager(app_name, from_id, to_id, self.dry_run)
                     mig.run()
-                    time.sleep(2)
-                    mig = MigrationManager(app_name, from_id, to_id)
+                    mig = MigrationManager(app_name, from_id, to_id, self.dry_run)
                     mig.post_processing()
                     mig.process_data_migrations()
                 except SyntaxError:
