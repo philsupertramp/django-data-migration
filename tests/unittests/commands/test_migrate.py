@@ -1,4 +1,5 @@
 import os.path
+import time
 from unittest import mock
 
 from data_migration.services.node import Node
@@ -108,6 +109,7 @@ class ExtendedMigrateCommandTestCase(TransactionalTestCase):
 
             call_command('makemigrations', ['test_app'], data_migration=True)
             self.run_commit_hooks()
+            time.sleep(1)
             call_command('migrate', app_label='test_app')
 
             self.assertEqual(self.get_val(), new_value)
