@@ -17,15 +17,8 @@ class Command(Migrate):
         super().add_arguments(parser)
 
     def handle(self, **options):
-        self.verbosity = options['verbosity']
-        self.interactive = options['interactive']
         app_label = options['app_label']
         extract_data_migrations = options['extract_data_migrations']
-        start_migration_name = options['start_migration_name']
-        migration_name = options['migration_name']
-        no_optimize = options['no_optimize']
-        squashed_name = options['squashed_name']
-        include_header = options['include_header']
         # Validate app_label.
         try:
             apps.get_app_config(app_label)
