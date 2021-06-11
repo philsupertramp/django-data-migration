@@ -8,16 +8,18 @@ from data_migration.services.graph import Graph
 class Command(Migrate):
     """
     Extended migrate command.
+
     Allows forward and backward migration of data/regular migrations
     """
-    def add_arguments(self, parser):
+
+    def add_arguments(self, parser):  # noqa D102
         parser.add_argument(
             '--data-only', action='store_true', dest='data_migration',
             help='Applies data migrations',
         )
         super().add_arguments(parser)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa D102
         # extract parameters
 
         if options['app_label']:
@@ -33,4 +35,3 @@ class Command(Migrate):
 
         if not options['data_migration']:
             return super().handle(*args, **options)
-

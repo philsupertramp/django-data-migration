@@ -2,7 +2,6 @@ import os
 from unittest import mock
 
 from django.db.migrations.exceptions import NodeNotFoundError
-from django.test import TestCase
 
 from data_migration.services.node import Node
 from data_migration.services.graph import Graph, GraphNode
@@ -81,11 +80,16 @@ class GraphTestCase(TransactionalTestCase):
             g.apply('foo123')
             self.assertEqual(str(ex), 'Data migration "foo123" not found.')
 
-    @mock.patch('django.db.migrations.loader.MigrationLoader.migrations_module',
-                return_value=('django.contrib.contenttypes.migrations', '__first__'))
+    @mock.patch('django.db.migrations.loader.MigrationLoader'
+                '.migrations_module',
+                return_value=('django.contrib.contenttypes.migrations',
+                              '__first__'))
     @mock.patch('django.apps.apps.get_app_config')
     def test_from_dir(self, get_app_config_mock, migrations_module_mock):
-        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.unittests.services'), path=this_dir)
+        get_app_config_mock.return_value = mock.Mock(
+            module=mock.Mock(__name__='tests.unittests.services'),
+            path=this_dir
+        )
         g = Graph.from_dir('tests.unittests.services')
         g.apply()
 
@@ -93,7 +97,10 @@ class GraphTestCase(TransactionalTestCase):
 
     def test_unapplied_dependency(self):
         g = Graph('test')
-        g.push_back(GraphNode('test', '0001_init', [], ['foobar.0001_init'], []))
+        node = GraphNode('test', '0001_init', [], ['foobar.0001_init'], [])
+        g.push_back(
+            node
+        )
 
         with self.assertRaises(NodeNotFoundError):
             g.apply()

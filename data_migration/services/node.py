@@ -71,18 +71,25 @@ class Node:
         from django.utils import timezone
         self.created_at = timezone.now()
 
-        obj = self.Node(name=self.name, app_name=self.app_name, created_at=self.created_at)
+        obj = self.Node(
+            name=self.name,
+            app_name=self.app_name,
+            created_at=self.created_at
+        )
         obj.save()
         self.pk = obj.pk
         self.created_at = obj.created_at
 
     @property
-    def qs(self) -> 'django.db.models.Manager':
+    def qs(self):
         return self.Node.objects
 
     def exists(self):
         self.ensure_table()
-        return self.qs.filter(app_name=self.app_name, name=self.name).exists()
+        return self.qs.filter(
+            app_name=self.app_name,
+            name=self.name
+        ).exists()
 
     @classmethod
     def flush(cls):
@@ -109,4 +116,6 @@ class Node:
             with connections['default'].schema_editor() as editor:
                 editor.create_model(self.Node)
         except DjDatabaseError as ex:
-            raise DatabaseError(f'Table "data_migrations" not creatable ({str(ex)}')
+            raise DatabaseError(
+                f'Table "data_migrations" not creatable ({str(ex)}'
+            )

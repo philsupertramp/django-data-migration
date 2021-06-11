@@ -15,7 +15,9 @@ this_dir = os.path.dirname(__file__)
 def with_test_output_directory(fun):
     def inner(*args, **kwargs):
         with mock.patch('django.apps.apps.get_app_config') as dir_mock:
-            dir_mock.return_value = mock.Mock(path=os.path.join(this_dir, 'out'))
+            dir_mock.return_value = mock.Mock(
+                path=os.path.join(this_dir, 'out')
+            )
             return fun(*args, **kwargs)
 
     return inner
@@ -33,13 +35,15 @@ class DataMigrationGeneratorTestCase(FileTestCase):
         self.assertTrue(self.has_file('0001_first.py'))
 
     @with_test_output_directory
-    @mock.patch('data_migration.services.file_generator.DataMigrationGenerator.render_template')
+    @mock.patch('data_migration.services.file_generator.'
+                'DataMigrationGenerator.render_template')
     def test_empty(self, render_mock):
         DataMigrationGenerator('test', empty=True)
         render_mock.assert_not_called()
 
     @with_test_output_directory
-    @mock.patch('data_migration.services.file_generator.DataMigrationGenerator.render_template')
+    @mock.patch('data_migration.services.file_generator.'
+                'DataMigrationGenerator.render_template')
     def test_without_header(self, render_mock):
         render_mock.return_value = ''
         DataMigrationGenerator('test', set_header=False)
@@ -93,9 +97,14 @@ class DataMigrationGeneratorTestCase(FileTestCase):
                                migration_dependencies=migration_dependencies)
         self.assertTrue(self.has_file('0001_test.py'))
 
-        node = self.get_data_migration_node('tests.unittests.services.out.data_migrations.0001_test')
+        node = self.get_data_migration_node(
+            'tests.unittests.services.out.data_migrations.0001_test'
+        )
 
         self.assertIsNotNone(node)
         self.assertTrue(hasattr(node, 'migration_dependencies'))
-        self.assertEqual(set(node.migration_dependencies), set(migration_dependencies))
+        self.assertEqual(
+            set(node.migration_dependencies),
+            set(migration_dependencies)
+        )
         self.assertTrue(hasattr(node, 'dependencies'))

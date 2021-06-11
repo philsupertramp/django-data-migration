@@ -49,10 +49,13 @@ class TransactionalTestCase(DjangoTestCase):
         """
         Fake transaction commit to run delayed on_commit functions
         """
+        atomic_module = 'django.db.backends.base.base.BaseDatabaseWrapper' \
+                        '.validate_no_atomic_block'
         for db_name in reversed(self._databases_names()):
-            with mock.patch('django.db.backends.base.base.BaseDatabaseWrapper.validate_no_atomic_block',
-                            lambda a: False):
-                transaction.get_connection(using=db_name).run_and_clear_commit_hooks()
+            with mock.patch(atomic_module, lambda a: False):
+                transaction.get_connection(
+                    using=db_name
+                ).run_and_clear_commit_hooks()
 
 
 is_django_setup = False
@@ -91,8 +94,7 @@ def setup_django():
         TEMPLATES=[
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
-                'DIRS': [os.path.join(this_dir, 'templates')]
-                ,
+                'DIRS': [os.path.join(this_dir, 'templates')],
                 'APP_DIRS': True,
                 'OPTIONS': {
                     'context_processors': [

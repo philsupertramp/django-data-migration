@@ -1,9 +1,9 @@
 import os
 import sys
-import time
 from typing import List, Dict
 
-from data_migration.services.file_generator import DataMigrationGenerator, Routine
+from data_migration.services.file_generator import DataMigrationGenerator,\
+    Routine
 from django.apps import apps
 from django.core.management import call_command
 from django.db.migrations import Migration
@@ -32,12 +32,6 @@ log = Log()
 sys.stdout = log
 
 
-class MethodInfo:
-    def __init__(self, filename: str, replacement_string: str):
-        self.filename = filename
-        self.replacement_string = replacement_string
-
-
 class MigrationFile:
     def __init__(self, fn: str, replacement_string: str, pos: int):
         self.file_name: str = fn
@@ -46,7 +40,8 @@ class MigrationFile:
 
 
 class MigrationManager:
-    def __init__(self, app_name: str, starting_point: str, end_point: str, dry_run: bool = False):
+    def __init__(self, app_name: str, starting_point: str,
+                 end_point: str, dry_run: bool = False):
         self.app_name: str = app_name
         self.start: str = starting_point
         self.end: str = end_point
@@ -63,38 +58,41 @@ class MigrationManager:
     def __repr__(self):
         return self.file_name
 
-    @classmethod
-    def from_filename(cls, filename):
-        obj = cls('', '', '')
-        obj.file_name = filename
-        return obj
-
     @property
-    def app_path(self):
+    def app_path(self) -> str:
         return apps.get_app_config(self.app_name).path
 
-    def gen_file_name(self):
-        return f'{self.app_path}/migrations/{self.start}_squashed_{self.end}.py'
+    def gen_file_name(self) -> str:
+        return f'{self.app_path}/migrations/{self.start}' \
+               f'_squashed_{self.end}.py'
 
-    def gen_new_file_name(self):
-        if self.app_name:
-            return f'{self.app_path}/migrations/{self.start.split("_")[0]}_squashed_{self.end.split("_")[0]}.py'
-        return self.file_name
+    def gen_new_file_name(self) -> str:
+        return f'{self.app_path}/migrations/' \
+               f'{self.start.split("_")[0]}' \
+               f'_squashed_{self.end.split("_")[0]}.py'
 
     def _parse_generated_file(self):
         parse_start = False
         with open(self.file_name, 'r') as file:
             char_count = 0
             line = "–"
+            replacement_string = '# RunPython operations to refer ' \
+                                 'to the local versions:'
             while line != "":
                 line = file.readline()
-                if '# RunPython operations to refer to the local versions:' in line:
+                if replacement_string in line:
                     parse_start = True
                     self.requires_action = True
                 elif parse_start and '#' in line:
                     partial_path = line.replace('# ', '').replace('\n', '')
                     migration_path = f'{partial_path.replace(".", "/")}.py'
-                    self.migration_files_to_touch.append(MigrationFile(migration_path, partial_path, char_count))
+                    self.migration_files_to_touch.append(
+                        MigrationFile(
+                            migration_path,
+                            partial_path,
+                            char_count
+                        )
+                    )
 
                 char_count += len(line)
 
@@ -102,10 +100,18 @@ class MigrationManager:
         self.load()
 
         if self.dry_run:
-            log.write(f'Squashing {self.app_name}: "{self.start}"–"{self.end}"')
+            log.write(f'Squashing {self.app_name}: '
+                      f'"{self.start}"–"{self.end}"')
             return
 
-        call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input', stdout=log)
+        call_command(
+            'django_squashmigrations',
+            self.app_name,
+            self.start,
+            self.end,
+            '--no-input',
+            stdout=log
+        )
 
     def post_processing(self):
         """
@@ -118,40 +124,51 @@ class MigrationManager:
 
         self.load()
         self._parse_generated_file()
-        if self.requires_action:
+        if not self.requires_action:
+            return
 
-            with open(self.file_name, 'r') as read_file, open(self.new_file_name, 'w') as write_file:
-                stack_open = False
-                line = "–"
-                while line != "":
-                    line = read_file.readline()
-                    if 'RunPython(' in line:
-                        stack_open = True
-                        continue
+        with open(self.file_name, 'r') as read_file,\
+             open(self.new_file_name, 'w') as write_file:
+            stack_open = False
+            line = "–"
+            while line != "":
+                line = read_file.readline()
+                if 'RunPython(' in line:
+                    stack_open = True
+                    continue
 
-                    if stack_open and ')' in line:
-                        stack_open = False
-                        continue
+                if stack_open and ')' in line:
+                    stack_open = False
+                    continue
 
-                    found = False
-                    for elem in self.migration_files_to_touch:
-                        if elem.replacement_string in line:
-                            found = True
-                            index = line.find(elem.replacement_string)
-                            next_space = line.find(' ', index + len(elem.replacement_string))
-                            if next_space == -1:
-                                next_space = line.find(',', index + len(elem.replacement_string))
-                            if next_space == -1:
-                                next_space = line.find('\n', index + len(elem.replacement_string))
-                            elem.replacement_string = line[index:next_space]
-                            break
+                found = False
+                for elem in self.migration_files_to_touch:
+                    if elem.replacement_string in line:
+                        found = True
+                        index = line.find(elem.replacement_string)
+                        next_space = line.find(
+                            ' ',
+                            index + len(elem.replacement_string)
+                        )
+                        if next_space == -1:
+                            next_space = line.find(
+                                ',',
+                                index + len(elem.replacement_string)
+                            )
+                        if next_space == -1:
+                            next_space = line.find(
+                                '\n',
+                                index + len(elem.replacement_string)
+                            )
+                        elem.replacement_string = line[index:next_space]
+                        break
 
-                    if stack_open or 'code=' in line or '#' in line or found:
-                        continue
+                if stack_open or 'code=' in line or '#' in line or found:
+                    continue
 
-                    write_file.write(line)
+                write_file.write(line)
 
-            os.remove(self.file_name)
+        os.remove(self.file_name)
 
     def process_data_migrations(self):
         """
@@ -174,7 +191,8 @@ class MigrationManager:
                 dry_run=self.dry_run,
             )
             if self.dry_run:
-                log.write(f'Would generate "{generator.file_name}", containing {len(generator.routines)} routines.')
+                log.write(f'Would generate "{generator.file_name}",'
+                          f' containing {len(generator.routines)} routines.')
 
 
 class MigrationSquash:
@@ -192,7 +210,10 @@ class MigrationSquash:
         return log
 
     def get_migration_graph(self):
-        django_plan = self.executor.migration_plan(self.executor.loader.graph.leaf_nodes(), clean_start=True)
+        django_plan = self.executor.migration_plan(
+            self.executor.loader.graph.leaf_nodes(),
+            clean_start=True
+        )
         self.plan = [i[0] for i in django_plan]
 
     def parse_plan(self):
@@ -206,7 +227,8 @@ class MigrationSquash:
             elif last_key == app:
                 self.graph[f'{app}_{indices[app]}'].append(migration)
 
-            elif len(list(self.graph.keys())) > 0 and self.graph[list(self.graph.keys())[-1]] != app:
+            elif len(list(self.graph.keys())) > 0 \
+                    and self.graph[list(self.graph.keys())[-1]] != app:
                 indices[app] += 1
                 self.graph[f'{app}_{indices[app]}'] = [migration]
             else:
@@ -220,13 +242,8 @@ class MigrationSquash:
             if len(self.graph[street]) > 1 and app_name in self.list_of_apps:
                 from_id = self.graph[street][0].name
                 to_id = self.graph[street][-1].name
-                try:
-                    mig = MigrationManager(app_name, from_id, to_id, self.dry_run)
-                    mig.run()
-                    mig = MigrationManager(app_name, from_id, to_id, self.dry_run)
-                    mig.post_processing()
-                    mig.process_data_migrations()
-                except SyntaxError:
-                    if mig:
-                        mig.post_processing()
-                        mig.process_data_migrations()
+
+                mig = MigrationManager(app_name, from_id, to_id, self.dry_run)
+                mig.run()
+                mig.post_processing()
+                mig.process_data_migrations()

@@ -4,17 +4,16 @@ from data_migration.services.file_generator import DataMigrationGenerator
 
 
 class Command(Migrate):
-    """
-    Extended makemigrations command
-    """
-    def add_arguments(self, parser):
+    """Extended makemigrations command."""
+
+    def add_arguments(self, parser):  # noqa D102
         parser.add_argument(
             '--data-only', action='store_true', dest='data_migration',
             help='Creates a data migration file.',
         )
         super().add_arguments(parser)
 
-    def handle(self, *app_labels, **options):
+    def handle(self, *app_labels, **options):  # noqa D102
         create_empty_data_migration = options.get('data_migration')
         if create_empty_data_migration:
             is_dry_run = options.get('dry_run')
@@ -29,4 +28,3 @@ class Command(Migrate):
 
         else:
             return super().handle(*app_labels, **options)
-

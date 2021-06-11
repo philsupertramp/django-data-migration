@@ -38,7 +38,8 @@ class Migration(migrations.Migration):
             field=models.CharField(max_length=1, null=True),
         ),
         migrations.RunPython(
-            split_name, combine_name
+            split_name,
+            combine_name
         ),
         migrations.RemoveField(
             model_name='someclass',

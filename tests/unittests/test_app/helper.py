@@ -15,9 +15,13 @@ class ResetDirectoryContext:
         for target in self.targets:
             dir_path = os.path.join(this_dir, target)
             try:
-                files = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f not in self.protected_files and os.path.isfile(os.path.join(dir_path, f))]
+                files = [
+                    os.path.join(dir_path, f)
+                    for f in os.listdir(dir_path)
+                    if f not in self.protected_files
+                    and os.path.isfile(os.path.join(dir_path, f))
+                ]
             except FileNotFoundError:
                 continue
             for file in files:
                 os.remove(file)
-

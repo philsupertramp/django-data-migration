@@ -48,16 +48,21 @@ class MigrateCommandTestCase(TransactionalTestCase):
         migrate_command.assert_not_called()
         self.assertEqual(some_other_value, old_value)
 
-    @mock.patch('django.db.migrations.loader.MigrationLoader.migrations_module',
-                return_value=('django.contrib.contenttypes.migrations', '__first__'))
+    @mock.patch('django.db.migrations.loader.MigrationLoader.'
+                'migrations_module',
+                return_value=('django.contrib.contenttypes.'
+                              'migrations', '__first__'))
     @mock.patch('django.apps.apps.get_app_config')
     @mock.patch('django.core.management.commands.migrate.Command.handle')
-    def test_app_label(self, migrate_command, get_app_config_mock, migration_module_mock):
+    def test_app_label(self, migrate_command,
+                       get_app_config_mock, migration_module_mock):
         global some_other_value, new_value, old_value
 
         migrate_command.return_value = 'Ok.'
-        get_app_config_mock.return_value = mock.Mock(module=mock.Mock(__name__='tests.unittests.commands.in'), path=os.path.join(this_dir,
-                                                                                                                       'in'))
+        get_app_config_mock.return_value = mock.Mock(
+            module=mock.Mock(__name__='tests.unittests.commands.in'),
+            path=os.path.join(this_dir, 'in')
+        )
         self.assertEqual(some_other_value, old_value)
 
         call_command('migrate', app_label='tests.unittests.commands.in')
@@ -86,11 +91,18 @@ class ExtendedMigrateCommandTestCase(TransactionalTestCase):
         global some_other_value
         return some_other_value
 
-    @mock.patch('django.db.migrations.loader.MigrationLoader.migrations_module',
-                return_value=('tests.unittests.test_app.migrations', '__first__'))
+    @mock.patch('django.db.migrations.loader.MigrationLoader.'
+                'migrations_module',
+                return_value=('tests.unittests.test_app.migrations',
+                              '__first__'))
     def test_migrate_with_leaf_migration(self, migration_module_mock):
         with ResetDirectoryContext():
-            call_command('migrate', app_label='test_app', migration_name='zero', data_migration=True)
+            call_command(
+                'migrate',
+                app_label='test_app',
+                migration_name='zero',
+                data_migration=True
+            )
 
             self.assertEqual(self.get_val(), old_value)
 

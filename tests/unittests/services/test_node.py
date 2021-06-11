@@ -1,6 +1,7 @@
 from unittest import TestCase, mock
 
-from data_migration.services.node import Node, AlreadyAppliedError, DatabaseError
+from data_migration.services.node import (Node, AlreadyAppliedError,
+                                          DatabaseError)
 from django.db import DatabaseError as DjDatabaseError
 
 
@@ -27,7 +28,8 @@ class NodeTestCase(TestCase):
         node.apply()
         self.assertTrue(node.is_applied)
 
-    @mock.patch('django.db.backends.base.base.BaseDatabaseWrapper.schema_editor')
+    @mock.patch('django.db.backends.base.base.BaseDatabaseWrapper'
+                '.schema_editor')
     def test_ensure_table_side_effect(self, schema_editor_mock):
         schema_editor_mock.side_effect = DjDatabaseError()
 
