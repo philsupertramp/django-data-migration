@@ -95,6 +95,7 @@ class ExtendedMigrateCommandTestCase(TransactionalTestCase):
             self.assertEqual(self.get_val(), old_value)
 
             call_command('makemigrations', ['test_app'], data_migration=True)
+            self.run_commit_hooks()
             call_command('migrate', app_label='test_app')
 
             self.assertEqual(self.get_val(), new_value)
