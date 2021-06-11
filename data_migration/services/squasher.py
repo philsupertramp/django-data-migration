@@ -80,8 +80,9 @@ class MigrationManager:
         parse_start = False
         with open(self.file_name, 'r') as file:
             char_count = 0
-            line = file.readline()
-            while line:
+            line = "–"
+            while line != "":
+                line = file.readline()
                 if '# RunPython operations to refer to the local versions:' in line:
                     parse_start = True
                     self.requires_action = True
@@ -91,10 +92,9 @@ class MigrationManager:
                     self.migration_files_to_touch.append(MigrationFile(migration_path, partial_path, char_count))
 
                 char_count += len(line)
-                line = file.readline()
 
     def run(self):
-        call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input')
+        call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input', stdout=log)
 
     def post_processing(self):
         self._parse_generated_file()
@@ -102,8 +102,9 @@ class MigrationManager:
 
             with open(self.file_name, 'r') as read_file, open(self.new_file_name, 'w') as write_file:
                 stack_open = False
-                line = read_file.readline()
-                while line:
+                line = "–"
+                while line != "":
+                    line = read_file.readline()
                     if 'RunPython(' in line:
                         stack_open = True
                         continue
@@ -129,7 +130,6 @@ class MigrationManager:
                         continue
 
                     write_file.write(line)
-                    line = read_file.readline()
 
             os.remove(self.file_name)
 
