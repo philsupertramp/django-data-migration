@@ -1,8 +1,11 @@
 import os
+import shutil
+from importlib import import_module
 from typing import Optional
 from unittest import TestCase, mock
 from django.test import TransactionTestCase as DjangoTestCase
 from django.db import transaction
+from data_migration.services.graph import GraphNode
 import django
 
 
@@ -14,16 +17,11 @@ class FileTestCase(TestCase):
     target = ''
 
     def clean_directory(self):
-        dir_path = os.path.join(self.target, 'out/data_migrations')
-        files = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f != '.gitkeep']
-        for file in files:
-            os.remove(file)
-        os.removedirs(os.path.join(self.target, 'out/data_migrations'))
+        shutil.rmtree(os.path.join(self.target))
 
     def has_file(self, name: str) -> bool:
-        dir_path = os.path.join(self.target, 'out/data_migrations')
         try:
-            for f in os.listdir(dir_path):
+            for f in os.listdir(self.target):
                 if f == name:
                     return True
         except FileNotFoundError:
@@ -31,13 +29,19 @@ class FileTestCase(TestCase):
         return False
 
     def get_file(self, name: str) -> Optional[str]:
-        dir_path = os.path.join(self.target, 'out/data_migrations')
-        for f in os.listdir(dir_path):
+        for f in os.listdir(self.target):
             if f == name:
-                with open(os.path.join(dir_path, f), 'r') as file:
+                with open(os.path.join(self.target, f), 'r') as file:
                     content = file.read()
                 return content
         return None
+
+    def get_data_migration_node(self, module_path):
+        try:
+            node = import_module(module_path).Node
+            return GraphNode.from_struct(module_path.split('.')[-2], node)
+        except AttributeError:
+            return None
 
 
 class TransactionalTestCase(DjangoTestCase):
@@ -81,7 +85,8 @@ def setup_django():
             'django.contrib.messages',
             'django.contrib.staticfiles',
             'data_migration',
-            'tests.unittests.test_app.apps.TestAppConfig'
+            'tests.unittests.test_app.apps.TestAppConfig',
+            'tests.unittests.test_app_2.apps.TestApp2Config'
         ],
         TEMPLATES=[
             {
@@ -120,3 +125,5 @@ def teardown_django():
         os.remove(DB_NAME)
     except FileNotFoundError:
         pass
+    global is_django_setup
+    is_django_setup = False

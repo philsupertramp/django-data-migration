@@ -32,6 +32,7 @@ class GraphNode:
             node_obj.created_at = node.created_at
         return node_obj
 
+    # TODO: this is too complex!
     def apply(self):
         if self.node.is_applied:
             return

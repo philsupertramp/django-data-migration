@@ -1,6 +1,7 @@
+import logging
 import os
 from dataclasses import dataclass
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, List
 
 from django.apps import apps
 from django.db import connections
@@ -11,6 +12,8 @@ from django.utils import timezone
 from data_migration.helper import get_package_version_string
 
 current_dir = os.path.dirname(__file__)
+
+log = logging.Logger(__file__)
 
 
 @dataclass
@@ -30,13 +33,14 @@ class DataMigrationGenerator:
         self.app_name = app_name
         if isinstance(self.app_name, list):
             self.app_name = self.app_name[0]
+            log.warning(f'Initialize "{self.__class__.__name__}" using list, will generate file for {self.app_name}.')
         root_dir = apps.get_app_config(self.app_name).path
         self.file_dir = os.path.join(root_dir, 'data_migrations')
         self.set_header = set_header
         self.empty = empty
         self.dry_run = dry_run
         self.routines: List[Routine] = routines
-        if not migration_dependencies:
+        if migration_dependencies is None:
             migration_dependencies = []
         self.migration_dependencies: List[str] = migration_dependencies
         self._gen_file(readable_name)

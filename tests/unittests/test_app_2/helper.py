@@ -6,7 +6,12 @@ this_dir = os.path.dirname(__file__)
 
 class ResetDirectoryContext:
     targets = ['migrations', 'data_migrations']
-    protected_files = ['__init__.py', '0001_first.py', '0002_add_name.py']
+    protected_files = [
+        '0001_initial.py',     '0004_customer_is_active.py',  '0007_remove_customer_address.py',
+        '0002_split_name.py',  '0005_customer_address.py',    '0008_customer_is_business.py',
+        '0003_mmodel.py',      '0006_address_line_split.py',  '__init__.py',
+
+    ]
 
     def __enter__(self):
         return True

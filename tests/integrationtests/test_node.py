@@ -37,3 +37,20 @@ class NodeTestCase(unittest.TestCase):
         wrapper = WrapperClass('wrapper')
 
         self.assertEqual(str(wrapper), 'wrapper')
+
+    def test_classproperty_getter(self):
+        class Foo:
+            @classproperty
+            def bar(cls):
+                class Bar:
+                    pass
+                return Bar
+
+        foo = Foo()
+
+        # access as member
+        bar = foo.bar
+        self.assertIsNotNone(bar())
+
+        # access trough class
+        self.assertIsNotNone(Foo.bar())

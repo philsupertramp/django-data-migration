@@ -1,1 +1,4 @@
-default_app_config = 'tests.test_app.apps.TestAppConfig'
+"""
+Test app to simulate data migration process.
+"""
+default_app_config = 'tests.unittests.test_app.apps.TestAppConfig'

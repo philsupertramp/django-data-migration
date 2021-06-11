@@ -1,7 +1,7 @@
 from unittest import TestCase, mock
 
-from data_migration.services.node import Node, AlreadyAppliedError
-from django.db import DatabaseError
+from data_migration.services.node import Node, AlreadyAppliedError, DatabaseError
+from django.db import DatabaseError as DjDatabaseError
 
 
 class NodeTestCase(TestCase):
@@ -29,11 +29,11 @@ class NodeTestCase(TestCase):
 
     @mock.patch('django.db.backends.base.base.BaseDatabaseWrapper.schema_editor')
     def test_ensure_table_side_effect(self, schema_editor_mock):
-        schema_editor_mock.side_effect = DatabaseError()
+        schema_editor_mock.side_effect = DjDatabaseError()
 
         node = Node(app_name='test', name='0001_initial')
-        node.has_table = lambda x: False
+        node.has_table = lambda: False
 
-        with self.assertRaises(Exception) as ex:
+        with self.assertRaises(DatabaseError) as ex:
             node.ensure_table()
             self.assertEqual(str(ex), 'Table "data_migrations" not creatable.')

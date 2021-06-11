@@ -16,8 +16,8 @@ MigrationGraph = Dict[str, List[Migration]]
 
 
 class Log:
-    def __init__(self):
-        self.stdout = sys.stdout
+    def __init__(self, out=sys.stdout):
+        self.stdout = out
         self.log = ''
 
     def write(self, message):
@@ -36,6 +36,13 @@ class MethodInfo:
     def __init__(self, filename: str, replacement_string: str):
         self.filename = filename
         self.replacement_string = replacement_string
+
+
+class MigrationFile:
+    def __init__(self, fn: str, replacement_string: str, pos: int):
+        self.file_name: str = fn
+        self.replacement_string: str = replacement_string
+        self.position: int = pos
 
 
 class MigrationManager:
@@ -85,7 +92,7 @@ class MigrationManager:
                 char_count += len(line)
 
     def run(self):
-        call_command('squashmigrations', self.app_name, self.start, self.end, '--no-input')
+        call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input')
 
     def post_processing(self):
         self._parse_generated_file()
@@ -139,13 +146,6 @@ class MigrationManager:
             )
 
 
-class MigrationFile:
-    def __init__(self, fn: str, replacement_string: str, pos: int):
-        self.file_name: str = fn
-        self.replacement_string: str = replacement_string
-        self.position: int = pos
-
-
 class MigrationSquash:
     def __init__(self, _loa: List[str]):
         self.executor: MigrationExecutor = MigrationExecutor(connection)
@@ -191,7 +191,7 @@ class MigrationSquash:
                 try:
                     mig = MigrationManager(app_name, from_id, to_id)
                     mig.run()
-                    time.sleep(1)
+                    time.sleep(2)
                     mig = MigrationManager(app_name, from_id, to_id)
                     mig.post_processing()
                     mig.process_data_migrations()

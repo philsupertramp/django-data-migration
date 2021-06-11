@@ -19,6 +19,11 @@ class AlreadyAppliedError(Exception):
         super().__init__(f'Node {node} already applied. Do not reapply them!')
 
 
+class DatabaseError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class Node:
     """
     This is literally the same as django's MigrationRecorder
@@ -98,10 +103,10 @@ class Node:
     def ensure_table(self):
         if self.has_table():
             return
-        from django.db import connections, DatabaseError
+        from django.db import connections, DatabaseError as DjDatabaseError
         # Make the table
         try:
             with connections['default'].schema_editor() as editor:
                 editor.create_model(self.Node)
-        except DatabaseError as ex:
-            raise Exception(f'Table "data_migrations" not creatable ({str(ex)}')
+        except DjDatabaseError as ex:
+            raise DatabaseError(f'Table "data_migrations" not creatable ({str(ex)}')

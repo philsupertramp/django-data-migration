@@ -18,7 +18,7 @@ def with_test_output_directory(fun):
 
 
 class MakemigrationsCommandTestCase(FileTestCase):
-    target = this_dir
+    target = os.path.join(this_dir, 'out/data_migrations')
     needs_cleanup = False
 
     def tearDown(self) -> None:

@@ -22,7 +22,7 @@ def with_test_output_directory(fun):
 
 
 class DataMigrationGeneratorTestCase(FileTestCase):
-    target = this_dir
+    target = os.path.join(this_dir, 'out/data_migrations')
 
     def tearDown(self) -> None:
         self.clean_directory()
@@ -80,3 +80,22 @@ class DataMigrationGeneratorTestCase(FileTestCase):
         file_content = self.get_file('0002_auto.py')
 
         self.assertIn('0001_first', file_content)
+
+    @with_test_output_directory
+    def test_init_with_app_name_list(self):
+        DataMigrationGenerator(['test'])
+        self.assertTrue(self.has_file('0001_first.py'))
+
+    @with_test_output_directory
+    def test_with_dependencies(self):
+        migration_dependencies = ['test.0001_init']
+        DataMigrationGenerator(['test'], readable_name='test',
+                               migration_dependencies=migration_dependencies)
+        self.assertTrue(self.has_file('0001_test.py'))
+
+        node = self.get_data_migration_node('tests.unittests.services.out.data_migrations.0001_test')
+
+        self.assertIsNotNone(node)
+        self.assertTrue(hasattr(node, 'migration_dependencies'))
+        self.assertEqual(set(node.migration_dependencies), set(migration_dependencies))
+        self.assertTrue(hasattr(node, 'dependencies'))
