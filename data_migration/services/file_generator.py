@@ -1,5 +1,7 @@
+import logging
 import os
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, List
 
 from django.apps import apps
 from django.db import connections
@@ -11,27 +13,59 @@ from data_migration.helper import get_package_version_string
 
 current_dir = os.path.dirname(__file__)
 
+log = logging.Logger(__file__)
+
+
+@dataclass
+class Routine:
+    method: str
+    module: str
+    module_name: str
+    file_path: str
+
 
 class DataMigrationGenerator:
-    migration_template = os.path.join(current_dir, 'templates/migration.py.txt')
+    migration_template = os.path.join(
+        current_dir,
+        'templates/migration.py.txt'
+    )
 
-    def __init__(self, app_name, readable_name: Optional[str] = None, set_header: bool = True,
-                 empty: bool = False, dry_run: bool = False) -> None:
+    def __init__(self, app_name, readable_name: Optional[str] = None,
+                 set_header: bool = True, empty: bool = False,
+                 dry_run: bool = False, routines: List[Routine] = None,
+                 migration_dependencies: List[str] = None) -> None:
         self.app_name = app_name
         if isinstance(self.app_name, list):
             self.app_name = self.app_name[0]
+            log.warning(
+                f'Initialize "{self.__class__.__name__}" using list,'
+                f' will generate file for {self.app_name}.'
+            )
+
+        self.clean_app_name()
         root_dir = apps.get_app_config(self.app_name).path
         self.file_dir = os.path.join(root_dir, 'data_migrations')
         self.set_header = set_header
         self.empty = empty
         self.dry_run = dry_run
-        self._gen_filename(readable_name)
+        self.routines: List[Routine] = routines
+        if migration_dependencies is None:
+            migration_dependencies = []
+        self.migration_dependencies: List[str] = migration_dependencies
+        self._gen_file(readable_name)
 
-    def _gen_filename(self, readable_name: Optional[str] = None):
+    def clean_app_name(self):
+        self.app_name = self.app_name.replace('[\'', '').replace('\']', '')
+
+    def _gen_file(self, readable_name: Optional[str] = None):
         empty_dir = True
         files = []
         if os.path.isdir(self.file_dir):
-            files = [f for f in os.listdir(self.file_dir) if f != '__init__.py' and os.path.isfile(os.path.join(self.file_dir, f))]
+            files = [
+                f for f in os.listdir(self.file_dir)
+                if (f != '__init__.py'
+                    and os.path.isfile(os.path.join(self.file_dir, f)))
+            ]
             empty_dir = len(files) == 0
         elif not self.dry_run:
             # create directory
@@ -43,13 +77,17 @@ class DataMigrationGenerator:
         latest_filename = ''
         if empty_dir:
             # create first migration file
-            self.file_name = os.path.join(self.file_dir, f'0001_{readable_name or "first"}.py')
+            self.file_name = os.path.join(
+                self.file_dir,
+                f'0001_{readable_name or "first"}.py'
+            )
         else:
             latest_filename = sorted(files)[-1]
             latest_id = int(latest_filename[:4])
 
             # 0001_first.py or xxxx_auto.py
-            file_name = f'{self._get_id(latest_id+1)}_{readable_name or ("auto" if latest_id>0 else "first")}.py'
+            name = readable_name or ("auto" if latest_id > 0 else "first")
+            file_name = f'{self._get_id(latest_id+1)}_{name}.py'
             self.file_name = os.path.join(self.file_dir, file_name)
 
         if self.dry_run:
@@ -61,12 +99,13 @@ class DataMigrationGenerator:
         if self.empty:
             return
 
-        file = open(self.file_name, 'w')
         template_kwargs = {
             'file_name': self.file_name.split('/')[-1].replace('.py', ''),
             'set_header': self.set_header,
             'date': timezone.now().strftime('%Y-%m-%d %H:%M'),
-            'package': get_package_version_string()
+            'package': get_package_version_string(),
+            'routines': self.routines,
+            'migration_dependencies': self.migration_dependencies
         }
 
         if not empty_dir and latest_filename:
@@ -75,13 +114,19 @@ class DataMigrationGenerator:
             })
 
         recorder = MigrationRecorder(connections['default'])
-        latest_migration = recorder.migration_qs.filter(app=self.app_name).order_by('-applied').first()
+        latest_migration = recorder.migration_qs.filter(
+            app=self.app_name
+        ).order_by('-applied').first()
         if latest_migration:
-            template_kwargs.update({
-                'migration_dependencies': [f'{self.app_name}.{latest_migration.name}']
-            })
+            template_kwargs['migration_dependencies'].append(
+                f'{self.app_name}.{latest_migration.name}'
+            )
+
+        file = open(self.file_name, 'w')
         with open(self.migration_template, 'r') as input_file:
-            file.write(self.render_template(input_file.read(), **template_kwargs))
+            file.write(self.render_template(
+                input_file.read(), **template_kwargs)
+            )
         file.close()
 
     @staticmethod

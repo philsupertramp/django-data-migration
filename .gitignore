@@ -1,5 +1,6 @@
 .idea/
 .pytest_cache/
+.venv/
 data_migration.egg-info/
 coverage_html_report/
 __pycache__/
