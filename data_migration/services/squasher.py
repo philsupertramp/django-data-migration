@@ -102,7 +102,8 @@ class MigrationManager:
 
             with open(self.file_name, 'r') as read_file, open(self.new_file_name, 'w') as write_file:
                 stack_open = False
-                while line := read_file.readline():
+                line = read_file.readline()
+                while line:
                     if 'RunPython(' in line:
                         stack_open = True
                         continue
@@ -128,6 +129,8 @@ class MigrationManager:
                         continue
 
                     write_file.write(line)
+                    line = read_file.readline()
+
             os.remove(self.file_name)
 
     def process_data_migrations(self):
