@@ -80,7 +80,8 @@ class MigrationManager:
         parse_start = False
         with open(self.file_name, 'r') as file:
             char_count = 0
-            while line := file.readline():
+            line = file.readline()
+            while line:
                 if '# RunPython operations to refer to the local versions:' in line:
                     parse_start = True
                     self.requires_action = True
@@ -90,6 +91,7 @@ class MigrationManager:
                     self.migration_files_to_touch.append(MigrationFile(migration_path, partial_path, char_count))
 
                 char_count += len(line)
+                line = file.readline()
 
     def run(self):
         call_command('django_squashmigrations', self.app_name, self.start, self.end, '--no-input')
