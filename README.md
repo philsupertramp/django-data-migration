@@ -90,3 +90,14 @@ class Node:
 
 # Features planned:
 - replace your current migration tree with a squashed version in combination with a data_migration tree
+
+
+# Development
+To develop the package further set up a local environment using the provided
+`./dev-requirements.txt` file.
+
+To run the test suite and generate a coverage report run
+```shell
+coverage run -m pytest -v tests
+coverage [html|report]
+```
