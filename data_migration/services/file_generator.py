@@ -34,6 +34,8 @@ class DataMigrationGenerator:
         if isinstance(self.app_name, list):
             self.app_name = self.app_name[0]
             log.warning(f'Initialize "{self.__class__.__name__}" using list, will generate file for {self.app_name}.')
+
+        self.clean_app_name()
         root_dir = apps.get_app_config(self.app_name).path
         self.file_dir = os.path.join(root_dir, 'data_migrations')
         self.set_header = set_header
@@ -44,6 +46,9 @@ class DataMigrationGenerator:
             migration_dependencies = []
         self.migration_dependencies: List[str] = migration_dependencies
         self._gen_file(readable_name)
+
+    def clean_app_name(self):
+        self.app_name = self.app_name.replace('[\'', '').replace('\']', '')
 
     def _gen_file(self, readable_name: Optional[str] = None):
         empty_dir = True
