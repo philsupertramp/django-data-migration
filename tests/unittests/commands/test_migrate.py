@@ -84,6 +84,5 @@ class MigrateCommandTestCase(TransactionalTestCase):
             call_command('migrate', app_label='test_app')
 
             self.run_commit_hooks()
-            print(new_value)
-            print(self.get_val())
+
             self.assertEqual(self.get_val(), new_value)

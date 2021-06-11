@@ -64,7 +64,7 @@ def setup_django():
         return
 
     is_django_setup = True
-    print('SETUP')
+
     from django.conf import settings
 
     settings.configure(

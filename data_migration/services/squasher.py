@@ -24,7 +24,7 @@ class Log:
         self.log += message
 
     def flush(self):
-        print(self.log)
+        self.stdout.write(self.log)
         self.log = ''
 
 
