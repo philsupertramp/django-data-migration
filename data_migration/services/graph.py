@@ -45,6 +45,19 @@ class GraphNode:
             node_obj.created_at = node.created_at
         return node_obj
 
+    def set_applied(self):
+        """Queries django's migration table to determine whether node was applied before or not"""
+
+        if self.node.is_applied:
+            return
+
+        recorder = MigrationRecorder(connections['default'])
+        dependency_names = [d.split('.')[-1] for d in self.migration_dependencies]
+        django_migrations = recorder.migration_qs.filter(
+            app=self.node.app_name, name__in=dependency_names)
+        if django_migrations.count() == len(dependency_names):
+            self.node.apply()
+
     def apply(self) -> None:
         """
         Apply node.
@@ -55,60 +68,15 @@ class GraphNode:
         if self.node.is_applied:
             return
 
-        # Get the database we're operating from
-        connection = connections['default']
+        if self.prepare_migration_state():
+            connection = connections['default']
 
-        # Work out which apps have migrations and which do not
-        executor = MigrationExecutor(connection)
-        pre_migrate_state = executor._create_project_state(
-            with_applied_migrations=True)
-        current_state_apps = pre_migrate_state.apps
-        migration_graph_in_place = True
-
-        if self.migration_dependencies:
-            recorder = MigrationRecorder(connections['default'])
-            applied_migrations = recorder.applied_migrations()
-            unapplied_dependencies = list()
-            for dependency in self.migration_dependencies:
-                plan = dependency.split('.')
-                plan = tuple([plan[-2], plan[-1]])
-                if plan not in applied_migrations:
-                    unapplied_dependencies.append(plan)
-
-            if unapplied_dependencies:
-                try:
-                    plan = executor.migration_plan(unapplied_dependencies)
-                    post_migrate_state = executor.migrate(
-                        unapplied_dependencies,
-                        plan=plan,
-                        state=pre_migrate_state.clone()
-                    )
-                    migration_graph_in_place = True
-                except NodeNotFoundError as ex:
-                    for dep in unapplied_dependencies:
-                        if not recorder.migration_qs.filter(
-                                app=dep[0],
-                                name__icontains=dep[1]
-                        ).exists():
-                            raise ex
-                else:
-                    # post_migrate signals have access to all models.
-                    # Ensures that all models are reloaded in case
-                    # any are delayed.
-                    post_migrate_state.clear_delayed_apps_cache()
-                    current_state_apps = post_migrate_state.apps
-
-            if not migration_graph_in_place:
-                migration_graph_in_place = (
-                    recorder
-                    .migration_qs
-                    .filter(app=self.node.app_name)
-                    .order_by('-pk').first() in self.migration_dependencies
-                )
-
-        if migration_graph_in_place:
-            with connections['default'].schema_editor(
-                    atomic=True) as schema_editor:
+            # Work out which apps have migrations and which do not
+            executor = MigrationExecutor(connection)
+            pre_migrate_state = executor._create_project_state(
+                with_applied_migrations=True)
+            current_state_apps = pre_migrate_state.apps
+            with connection.schema_editor(atomic=True) as schema_editor:
                 for routine in self.routines:
                     routine(
                         apps=current_state_apps,
@@ -127,6 +95,54 @@ class GraphNode:
         )
         self.node.qs.get(pk=self.node.pk).delete()
         self.node = backup_node
+
+    def prepare_migration_state(self):
+        """Migrates the django migration graph until dependencies are applied"""
+        # Get the database we're operating from
+        connection = connections['default']
+
+        # Work out which apps have migrations and which do not
+        executor = MigrationExecutor(connection)
+        pre_migrate_state = executor._create_project_state(
+            with_applied_migrations=True)
+        migration_graph_in_place = True
+
+        if self.migration_dependencies:
+            recorder = MigrationRecorder(connections['default'])
+            applied_migrations = recorder.applied_migrations()
+            unapplied_dependencies = list()
+            for dependency in self.migration_dependencies:
+                plan = dependency.split('.')
+                plan = tuple([plan[-2], plan[-1]])
+                if plan not in applied_migrations:
+                    unapplied_dependencies.append(plan)
+
+            if unapplied_dependencies:
+                try:
+                    plan = executor.migration_plan(unapplied_dependencies)
+                    executor.migrate(
+                        unapplied_dependencies,
+                        plan=plan,
+                        state=pre_migrate_state.clone()
+                    )
+                    migration_graph_in_place = True
+                except NodeNotFoundError as ex:
+                    for dep in unapplied_dependencies:
+                        if not recorder.migration_qs.filter(
+                                app=dep[0],
+                                name__icontains=dep[1]
+                        ).exists():
+                            raise ex
+
+            if not migration_graph_in_place:
+                migration_graph_in_place = (
+                    recorder
+                    .migration_qs
+                    .filter(app=self.node.app_name)
+                    .order_by('-pk').first() in self.migration_dependencies
+                )
+
+        return migration_graph_in_place
 
     def append(self, node) -> None:
         """

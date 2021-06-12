@@ -190,9 +190,7 @@ class MigrationManager:
                 migration_dependencies=[module.replace('.migrations', '')],
                 dry_run=self.dry_run,
             )
-            if self.dry_run:
-                log.write(f'Would generate "{generator.file_name}",'
-                          f' containing {len(generator.routines)} routines.')
+            generator.set_applied()
 
 
 class MigrationSquash:
@@ -236,7 +234,6 @@ class MigrationSquash:
             last_key = app
 
     def squash(self):
-        mig = None
         for index, street in enumerate(self.graph.keys()):
             app_name: str = self.graph[street][0].app_label
             if len(self.graph[street]) > 1 and app_name in self.list_of_apps:

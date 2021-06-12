@@ -57,6 +57,28 @@ class SquashmigrationsCommandTestCase(FileTestCase):
             self.assertTrue(self.has_file('0001_0002_split_name.py'))
             self.assertTrue(self.has_file('0002_0006_address_line_split.py'))
 
+    def test_dry_run_doesnt_create_files(self):
+        with ResetDirectory2Context():
+            call_command(
+                'squashmigrations',
+                'test_app_2',
+                '0001',
+                extract_data_migrations=True,
+                dry_run=True
+            )
+            self.assertFalse(self.has_file('0001_0002_split_name.py'))
+            self.assertFalse(self.has_file('0002_0006_address_line_split.py'))
+
+    def test_squash_without_data_migrations(self):
+        with ResetDirectory2Context():
+            call_command(
+                'squashmigrations',
+                'test_app_2',
+                '0007',
+                extract_data_migrations=True,
+            )
+            self.assertFalse(self.has_file('0007_0008_customer_is_business.py'))
+
 
 class LogTestCase(TestCase):
     def setUp(self) -> None:

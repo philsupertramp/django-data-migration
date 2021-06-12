@@ -15,6 +15,12 @@ class Command(Migrate):
             action='store_true',
             help='Minimize current migration tree and emplace data migrations',
         )
+        parser.add_argument(
+            '--dry-run',
+            dest='dry_run',
+            action='store_true',
+            help='Run squashing dry, does not create data_migration files.',
+        )
         super().add_arguments(parser)
 
     def handle(self, **options):  # noqa D102
@@ -27,7 +33,7 @@ class Command(Migrate):
             raise CommandError(str(err))
 
         if extract_data_migrations:
-            squasher = MigrationSquash(app_label)
+            squasher = MigrationSquash(app_label, options.get('dry_run'))
             squasher.squash()
             return squasher.log.log
         else:
