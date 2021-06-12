@@ -8,7 +8,7 @@ def read(fname):
 
 
 setup(
-    name='django-data-migration',
+    name='django-data-migrations',
     version=os.getenv('VERSION'),
     packages=['data_migration'],
     author='Philipp Zettl',

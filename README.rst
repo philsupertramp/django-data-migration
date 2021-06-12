@@ -2,6 +2,7 @@ django-data-migration
 =====================
 
 |Test dev branch|
+|Pypi|
 
 | Developing and maintaining a django project over many years can start to become a constant fight against time consuming tasks including execution of a test suite, recreation of a local environment or setting up a project in a new environment.
 
@@ -26,7 +27,7 @@ Installation
 Install package:
 
 | Planned:
-| ``pip install django-data-migration``
+| ``pip install django-data-migrations``
 
 | Reality:
 | 1. Clone the repo 1. run ``pip install .`` inside the project root
@@ -111,3 +112,6 @@ To run the test suite and generate a coverage report run
 
 .. |Test dev branch| image:: https://github.com/philsupertramp/django-data-migration/actions/workflows/test-dev.yml/badge.svg?branch=dev
    :target: https://github.com/philsupertramp/django-data-migration/actions/workflows/test-dev.yml
+
+.. |Pypi| image:: https://badge.fury.io/py/django-data-migrations.svg
+    :target: https://badge.fury.io/py/django-data-migrations
