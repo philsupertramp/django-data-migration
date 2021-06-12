@@ -104,11 +104,6 @@ class ExtendedMigrateCommandTestCase(TransactionalTestCase):
                 migration_name='zero',
                 data_migration=True
             )
-            call_command(
-                'migrate',
-                app_label='test_app',
-                migration_name='zero'
-            )
 
             self.assertEqual(self.get_val(), old_value)
 
