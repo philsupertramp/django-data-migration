@@ -8,9 +8,9 @@ def read(fname):
 
 
 setup(
-    name='data_migration',
+    name='django-data-migration',
     version=os.getenv('VERSION'),
-    packages=['data_migration', 'tests'],
+    packages=['data_migration'],
     author='Philipp Zettl',
     author_email='philipp.zett@godesteem.de',
     include_package_data=True,
@@ -19,8 +19,13 @@ setup(
     install_requires=[
         'django >= "2.2"'
     ],
-    long_description=read('README.md'),
+    long_description=read('README.rst'),
+    long_description_content_type='text/x-rst',
     classifiers=[
+        # 3 - Alpha
+        # 4 - Beta
+        # 5 - Production/Stable
+        "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",
         "Framework :: Django",
         "Framework :: Django :: 3.0",

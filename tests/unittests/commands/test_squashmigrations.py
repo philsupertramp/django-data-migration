@@ -4,8 +4,7 @@ from unittest import mock, TestCase
 
 from django.core.management import call_command, CommandError
 from tests.unittests.test_app.helper import ResetDirectoryContext
-from tests.unittests.test_app_2.helper import ResetDirectoryContext \
-    as ResetTestApp2DirectoryContext
+from tests.unittests.test_app_2.helper import ResetDirectory2Context
 from tests.utils import FileTestCase
 from data_migration.services.squasher import Log
 
@@ -29,7 +28,7 @@ class SquashmigrationsCommandTestCase(FileTestCase):
 
     def tearDown(self) -> None:
         if self.needs_cleanup:
-            # self.clean_directory()
+            self.clean_directory()
             self.needs_cleanup = False
 
     @mock.patch('django.core.management.commands.'
@@ -48,7 +47,7 @@ class SquashmigrationsCommandTestCase(FileTestCase):
             call_command('squashmigrations', 'foobar', '0001')
 
     def test_extended_squashing(self):
-        with ResetTestApp2DirectoryContext():
+        with ResetDirectory2Context():
             call_command(
                 'squashmigrations',
                 'test_app_2',
