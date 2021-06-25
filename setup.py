@@ -16,7 +16,7 @@ setup(
     include_package_data=True,
     description='Extraction tool for data only django migrations',
     keywords='django,database migrations',
-    url='https://github.com/philsupertramp/django-data-migrations',
+    url='https://github.com/philsupertramp/django-data-migration/',
     license='MIT',
     install_requires=[
         'django >= "2.2"'
