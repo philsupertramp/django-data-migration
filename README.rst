@@ -26,11 +26,7 @@ Installation
 
 Install package:
 
-| Planned:
 | ``pip install django-data-migrations``
-
-| Reality:
-| 1. Clone the repo 1. run ``pip install .`` inside the project root
 
 Configure package in Django settings:
 
@@ -90,12 +86,6 @@ The ``makemigrations`` command generates a file
 
     # revert partial data migration state
     ./manage.py migrate --data-only 0002_some_big_change
-
-Features planned:
-=================
-
--  replace your current migration tree with a squashed version in
-   combination with a data\_migration tree
 
 Development
 ===========
