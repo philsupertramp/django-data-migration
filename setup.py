@@ -14,7 +14,9 @@ setup(
     author='Philipp Zettl',
     author_email='philipp.zett@godesteem.de',
     include_package_data=True,
-    keywords='django',
+    description='Extraction tool for data only django migrations',
+    keywords='django,database migrations',
+    url='https://github.com/philsupertramp/django-data-migrations',
     license='MIT',
     install_requires=[
         'django >= "2.2"'
