@@ -1,3 +1,2 @@
 test:
-	pytest -v tests
-
+	pytest -v tests --cov
