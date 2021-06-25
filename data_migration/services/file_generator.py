@@ -1,6 +1,7 @@
 import logging
 import os
 from dataclasses import dataclass
+from importlib import import_module
 from typing import Optional, List
 
 from django.apps import apps
@@ -10,6 +11,7 @@ from django.template import engines
 from django.utils import timezone
 
 from data_migration.helper import get_package_version_string
+from data_migration.services.graph import GraphNode
 
 current_dir = os.path.dirname(__file__)
 
@@ -142,3 +144,15 @@ class DataMigrationGenerator:
         template = django_engine.from_string(content)
 
         return template.render(context=context)
+
+    def set_applied(self):
+        file = self.file_name.split('.')[0].split('/')[-1]
+        app_conf = apps.get_app_config(self.app_name)
+        module_name = f'{app_conf.module.__name__}.data_migrations.{file}'
+
+        try:
+            node = import_module(module_name).Node
+        except ModuleNotFoundError:
+            return
+        node = GraphNode.from_struct(self.app_name, node)
+        node.set_applied()

@@ -49,11 +49,15 @@ class MigrationManager:
         self.migration_files_to_touch: List[MigrationFile] = []
         self.file_name = None
         self.new_file_name = None
+        self.temp_file_name = None
+        self.temp_directory = None
         self.dry_run = dry_run
 
     def load(self):
         self.file_name = self.gen_file_name()
         self.new_file_name = self.gen_new_file_name()
+        self.temp_file_name = self.gen_temp_file_name()
+        self.temp_directory = '/'.join(self.file_name.split('/')[:-1] + ['temp'])
 
     def __repr__(self):
         return self.file_name
@@ -66,6 +70,10 @@ class MigrationManager:
         return f'{self.app_path}/migrations/{self.start}' \
                f'_squashed_{self.end}.py'
 
+    def gen_temp_file_name(self) -> str:
+        return f'{self.app_path}/migrations/temp/{self.start}' \
+               f'_squashed_{self.end}.py'
+
     def gen_new_file_name(self) -> str:
         return f'{self.app_path}/migrations/' \
                f'{self.start.split("_")[0]}' \
@@ -73,7 +81,7 @@ class MigrationManager:
 
     def _parse_generated_file(self):
         parse_start = False
-        with open(self.file_name, 'r') as file:
+        with open(self.temp_file_name, 'r') as file:
             char_count = 0
             line = "–"
             replacement_string = '# RunPython operations to refer ' \
@@ -123,11 +131,16 @@ class MigrationManager:
             return
 
         self.load()
+        try:
+            os.mkdir(self.temp_directory)
+        except FileExistsError:
+            pass
+        os.rename(self.file_name, self.temp_file_name)
         self._parse_generated_file()
         if not self.requires_action:
             return
 
-        with open(self.file_name, 'r') as read_file,\
+        with open(self.temp_file_name, 'r') as read_file,\
              open(self.new_file_name, 'w') as write_file:
             stack_open = False
             line = "–"
@@ -168,7 +181,7 @@ class MigrationManager:
 
                 write_file.write(line)
 
-        os.remove(self.file_name)
+        os.remove(self.temp_file_name)
 
     def process_data_migrations(self):
         """
@@ -190,9 +203,7 @@ class MigrationManager:
                 migration_dependencies=[module.replace('.migrations', '')],
                 dry_run=self.dry_run,
             )
-            if self.dry_run:
-                log.write(f'Would generate "{generator.file_name}",'
-                          f' containing {len(generator.routines)} routines.')
+            generator.set_applied()
 
 
 class MigrationSquash:
@@ -236,7 +247,6 @@ class MigrationSquash:
             last_key = app
 
     def squash(self):
-        mig = None
         for index, street in enumerate(self.graph.keys()):
             app_name: str = self.graph[street][0].app_label
             if len(self.graph[street]) > 1 and app_name in self.list_of_apps:

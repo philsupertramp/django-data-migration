@@ -30,7 +30,8 @@ class GraphTestCase(TransactionalTestCase):
         global some_value
         some_value = old_value
 
-    def test_apply(self):
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
+    def test_apply(self, set_applied_mock):
         g = Graph('test')
         node = GraphNode('test', '0001_init', [], [], [set_some_value])
         g.push_back(node)
@@ -47,7 +48,8 @@ class GraphTestCase(TransactionalTestCase):
 
         self.assertEqual(some_value, new_value)
 
-    def test_revert(self):
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
+    def test_revert(self, set_applied_mock):
         g = Graph('test')
         g.push_back(GraphNode('test', '0001_init', [], [], []))
         g.push_back(GraphNode('test', '0002_auto', ['0001_init'], [], []))
@@ -80,12 +82,14 @@ class GraphTestCase(TransactionalTestCase):
             g.apply('foo123')
             self.assertEqual(str(ex), 'Data migration "foo123" not found.')
 
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
     @mock.patch('django.db.migrations.loader.MigrationLoader'
                 '.migrations_module',
                 return_value=('django.contrib.contenttypes.migrations',
                               '__first__'))
     @mock.patch('django.apps.apps.get_app_config')
-    def test_from_dir(self, get_app_config_mock, migrations_module_mock):
+    def test_from_dir(self, get_app_config_mock, migrations_module_mock,
+                      set_applied_mock):
         get_app_config_mock.return_value = mock.Mock(
             module=mock.Mock(__name__='tests.unittests.services'),
             path=this_dir
@@ -95,7 +99,8 @@ class GraphTestCase(TransactionalTestCase):
 
         self.assertEqual(some_value, new_value)
 
-    def test_unapplied_dependency(self):
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
+    def test_unapplied_dependency(self, set_applied_mock):
         g = Graph('test')
         node = GraphNode('test', '0001_init', [], ['foobar.0001_init'], [])
         g.push_back(
@@ -105,7 +110,8 @@ class GraphTestCase(TransactionalTestCase):
         with self.assertRaises(NodeNotFoundError):
             g.apply()
 
-    def test_rebuilding_uses_existing_nodes(self):
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
+    def test_rebuilding_uses_existing_nodes(self, set_applied_mock):
         g = Graph('test')
         g.push_back(GraphNode('test', '0001_init', [], [], []))
         g.apply()

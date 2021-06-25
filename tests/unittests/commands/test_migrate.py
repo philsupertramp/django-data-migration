@@ -49,6 +49,7 @@ class MigrateCommandTestCase(TransactionalTestCase):
         migrate_command.assert_not_called()
         self.assertEqual(some_other_value, old_value)
 
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
     @mock.patch('django.db.migrations.loader.MigrationLoader.'
                 'migrations_module',
                 return_value=('django.contrib.contenttypes.'
@@ -56,7 +57,8 @@ class MigrateCommandTestCase(TransactionalTestCase):
     @mock.patch('django.apps.apps.get_app_config')
     @mock.patch('django.core.management.commands.migrate.Command.handle')
     def test_app_label(self, migrate_command,
-                       get_app_config_mock, migration_module_mock):
+                       get_app_config_mock, migration_module_mock,
+                       set_applied_mock):
         global some_other_value, new_value, old_value
 
         migrate_command.return_value = 'Ok.'
@@ -92,11 +94,13 @@ class ExtendedMigrateCommandTestCase(TransactionalTestCase):
         global some_other_value
         return some_other_value
 
+    @mock.patch('data_migration.services.graph.GraphNode.set_applied')
     @mock.patch('django.db.migrations.loader.MigrationLoader.'
                 'migrations_module',
                 return_value=('tests.unittests.test_app.migrations',
                               '__first__'))
-    def test_migrate_with_leaf_migration(self, migration_module_mock):
+    def test_migrate_with_leaf_migration(self, migration_module_mock,
+                                         set_applied_mock):
         with ResetDirectoryContext():
             call_command(
                 'migrate',
