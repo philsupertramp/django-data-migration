@@ -17,7 +17,7 @@ class Command(BaseCommand):
             help='App label of an application to synchronize the state.',
         )
         parser.add_argument(
-            '--squash_all', '-a', action='store_true', dest='squash_all',
+            '--all', '-a', action='store_true', dest='squash_all',
             help='Squash all apps.',
         )
         super().add_arguments(parser)
