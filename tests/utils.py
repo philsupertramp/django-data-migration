@@ -92,8 +92,14 @@ def setup_django():
             'django.contrib.staticfiles',
             'data_migration',
             'tests.unittests.test_app.apps.TestAppConfig',
-            'tests.unittests.test_app_2.apps.TestApp2Config'
+            'tests.unittests.test_app_2.apps.TestApp2Config',
         ],
+        DATA_MIGRATION={
+            'SQUASHABLE_APPS' : [
+                'test_app',
+                'test_app_2',
+            ],
+        },
         TEMPLATES=[
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
