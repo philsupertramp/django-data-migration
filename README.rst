@@ -28,7 +28,7 @@ Install package:
 
 | ``pip install django-data-migrations``
 
-Configure package in Django settings:
+| Configure package in Django settings:
 
 .. code:: python
 
@@ -38,16 +38,35 @@ Configure package in Django settings:
         # your apps
     ]
 
+Configuration
+=============
+
+| The package is configurable using the
+
+.. code:: python
+
+    DATA_MIGRATION = {}
+
+setting.
+
+Currently supported attributes:
+
+- ``SQUASHABLE_APPS``: a list of app(-label) names which allow squashing, you should only provide your own apps here
+
+
 Usage
 =====
 
-Extended management commands: - ``makemigrations`` - ``migrate`` -
-``squashmigrations``
+Extended management commands:
+- ``makemigrations``
+- ``migrate``
+- ``squashmigrations``
+- ``data_migrate``
 
 ``makemigrations``
 ~~~~~~~~~~~~~~~~~~
 
-.. code:: python
+.. code:: shell
 
     # generate data migration file
     ./manage.py makemigrations --data-only [app_name]
@@ -76,7 +95,7 @@ The ``makemigrations`` command generates a file
 ``migrate``
 ~~~~~~~~~~~
 
-::
+.. code:: shell
 
     # apply data migration file
     ./manage.py migrate --data-only
@@ -86,6 +105,35 @@ The ``makemigrations`` command generates a file
 
     # revert partial data migration state
     ./manage.py migrate --data-only 0002_some_big_change
+
+
+
+``squashmigrations``
+~~~~~~~~~~~~~~~~~~~~
+
+| App-wise squashing of data/regular migrations.
+
+.. code:: shell
+
+    # regular squashing of test_app migrations 0001-0015
+    ./manage.py squashmigrations test_app 0001 0015
+
+    # squash and replace test_app migrations 0001-0015 and extract data_migrations
+    ./manage.py squashmigrations --extract-data-migrations test_app 0001 0015
+
+``data_migrate``
+~~~~~~~~~~~~~~~~
+
+| Extended squashing. Allows squashing a single app, a list of apps, or all apps at once.
+
+.. code:: shell
+
+    # squash and replace all migrations at once
+    ./manage.py data_migrate --all
+
+    # squash and replace migrations app-wise
+    ./manage.py data_migrate test_app
+
 
 Development
 ===========
