@@ -108,3 +108,13 @@ class DataMigrationGeneratorTestCase(FileTestCase):
             set(migration_dependencies)
         )
         self.assertTrue(hasattr(node, 'dependencies'))
+
+    @mock.patch('django.apps.apps.get_app_config')
+    @mock.patch('importlib.import_module')
+    def test_set_applied_fails_gracefully(self, import_mock, app_config_mock):
+        app_config_mock.return_value = mock.Mock(
+            path=os.path.join(this_dir, 'out'), module=mock.Mock(__name__='foo')
+        )
+        import_mock.side_effect = ModuleNotFoundError()
+        # works without issue
+        DataMigrationGenerator(['foo']).set_applied()
