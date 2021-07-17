@@ -23,7 +23,7 @@ def with_test_output_directory(fun):
 
 
 class SquashmigrationsCommandTestCase(FileTestCase):
-    target = os.path.join(this_dir, '../test_app_2/data_migrations')
+    internal_target = os.path.join(this_dir, '../test_app_2/data_migrations')
     needs_cleanup = False
 
     def tearDown(self) -> None:

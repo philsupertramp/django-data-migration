@@ -1,7 +1,7 @@
 import os
 import shutil
 from importlib import import_module
-from typing import Optional
+from typing import Optional, List
 from unittest import TestCase, mock
 from django.test import TransactionTestCase as DjangoTestCase
 from django.db import transaction
@@ -14,7 +14,10 @@ DB_NAME = os.path.join(this_dir, 'db.sqlite3')
 
 
 class FileTestCase(TestCase):
-    target = ''
+    internal_target = ''
+
+    def setUp(self) -> None:
+        self.target = self.internal_target
 
     def clean_directory(self):
         shutil.rmtree(os.path.join(self.target))
@@ -89,8 +92,14 @@ def setup_django():
             'django.contrib.staticfiles',
             'data_migration',
             'tests.unittests.test_app.apps.TestAppConfig',
-            'tests.unittests.test_app_2.apps.TestApp2Config'
+            'tests.unittests.test_app_2.apps.TestApp2Config',
         ],
+        DATA_MIGRATION={
+            'SQUASHABLE_APPS' : [
+                'test_app',
+                'test_app_2',
+            ],
+        },
         TEMPLATES=[
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -129,3 +138,27 @@ def teardown_django():
         pass
     global is_django_setup
     is_django_setup = False
+
+
+class ResetDirectoryMixin:
+    targets: List[str] = []
+    protected_files: List[str] = []
+    this_dir: str = ''
+
+    def __enter__(self):
+        return True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for target in self.targets:
+            dir_path = os.path.join(self.this_dir, target)
+            try:
+                files = [
+                    os.path.join(dir_path, f)
+                    for f in os.listdir(dir_path)
+                    if f not in self.protected_files
+                    and os.path.isfile(os.path.join(dir_path, f))
+                ]
+            except FileNotFoundError:
+                continue
+            for file in files:
+                os.remove(file)

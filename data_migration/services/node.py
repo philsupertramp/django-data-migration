@@ -9,10 +9,6 @@ class classproperty:
     def __get__(self, instance, cls=None):
         return self.fget(cls)
 
-    def getter(self, method):
-        self.fget = method
-        return self
-
 
 class AlreadyAppliedError(Exception):
     def __init__(self, node: 'Node.Node'):
@@ -41,7 +37,7 @@ class Node:
 
             class NodeClass(models.Model):
                 app_name = models.CharField(max_length=255)
-                name = models.CharField(max_length=255, unique=True)
+                name = models.CharField(max_length=255)
                 created_at = models.DateTimeField()
 
                 class Meta:
@@ -49,6 +45,12 @@ class Node:
                     app_label = 'data_migration'
                     db_table = 'data_migrations'
                     get_latest_by = 'created_at'
+                    constraints = [
+                        models.UniqueConstraint(
+                            fields=['app_name', 'name'],
+                            name='unique_name_for_app'
+                        )
+                    ]
 
             cls._node_model = NodeClass
         return cls._node_model
