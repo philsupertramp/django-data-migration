@@ -24,7 +24,7 @@ def with_test_output_directory(fun):
 
 
 class DataMigrationGeneratorTestCase(FileTestCase):
-    target = os.path.join(this_dir, 'out/data_migrations')
+    internal_target = os.path.join(this_dir, 'out/data_migrations')
 
     def tearDown(self) -> None:
         self.clean_directory()
