@@ -19,7 +19,7 @@ setup(
     url='https://github.com/philsupertramp/django-data-migration/',
     license='MIT',
     install_requires=[
-        'django >= "2.2"'
+        'django >= 2.2'
     ],
     long_description=read('README.rst'),
     long_description_content_type='text/x-rst',
