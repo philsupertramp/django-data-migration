@@ -6,9 +6,11 @@ django-data-migration
 
 | Developing and maintaining a django project over many years can start to become a constant fight against time consuming tasks including execution of a test suite, recreation of a local environment or setting up a project in a new environment.
 
-| Due to different flavors of deployment and/or different approaches within the same working environment migration files of long running django applications tent to be bloated and contain unnecessary code. Which was at that time implemented to move, edit, duplicate or basically modify data. And the idea behind it is also clever.
+| Due to different flavors of deployment and/or different approaches within the same working environment migration files of long running django applications tent to be bloated and contain unnecessary code. Sometimes we even create migrations in the purpose of single-time usage to move, edit, duplicate or basically modify data.
 
-| With this approach you gained the option to trigger migration of leaf migrations prior to starting your updated application code.
+| Generally speaking, the idea behind it is clever.
+
+| With this approach you gained the option to trigger the execution of leaf migrations prior to starting your updated application code.
 
 .. code:: text
 
@@ -19,7 +21,8 @@ django-data-migration
         restart app with new code
 
 | But on the other hand you create a new node within a already giant migration graph.
-| This is where ``django-data-migration`` comes in place. It is a drop-in replacement for regular migrations, without the need of an dedicated node in the migration tree.
+| This is where ``django-data-migration`` comes in place. It is a drop-in replacement for regular migrations, without the need of a dedicated node in the migration tree.
+| It does that, by providing a "data-only" migration graph, that can optionally be maintained automatically in parallel with the existing migration graph, or executed independently, depending on your needs.
 
 Installation
 ============
