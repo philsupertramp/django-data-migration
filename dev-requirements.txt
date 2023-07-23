@@ -1,5 +1,5 @@
 asgiref==3.5.0
-attrs==21.4.0
+attrs==23.1.0
 coverage==6.5.0
 Django>=3.2.,<4.0
 iniconfig==1.1.1
